@@ -438,23 +438,23 @@ export default function Home() {
               className="w-full p-4 rounded-xl bg-zinc-800 border border-zinc-700"
             >
               <option value="0">
-                No Lock — 5% APY
+                No Lock — 5% APR
               </option>
 
               <option value="7776000">
-                3 Months — 8% APY
+                3 Months — 8% APR
               </option>
 
               <option value="15552000">
-                6 Months — 15% APY
+                6 Months — 15% APR
               </option>
 
               <option value="31536000">
-                12 Months — 25% APY
+                12 Months — 25% APR
               </option>
 
               <option value="63072000">
-                24 Months — 40% APY
+                24 Months — 40% APR
               </option>
 
             </select>
@@ -527,7 +527,7 @@ export default function Home() {
                 <tr className="border-b border-zinc-800 text-left text-gray-400 text-sm">
 
                   <th className="pb-4">Stake</th>
-                  <th className="pb-4">APY</th>
+                  <th className="pb-4">APR</th>
                   <th className="pb-4">Lock</th>
                   <th className="pb-4">Rewards</th>
                   <th className="pb-4">Unlock Date</th>
