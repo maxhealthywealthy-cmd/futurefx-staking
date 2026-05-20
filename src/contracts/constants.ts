@@ -3,3 +3,7 @@ export const STAKING_CONTRACT =
 
 export const TOKEN_CONTRACT =
   "0x2A95bacb268d4e90D2385a6827d9B2cd2b63f730";
+
+export const VESTING_CONTRACT =
+  "0x4125B94A556B4d84add8Efe26EA3b67F21067c0E";
+  

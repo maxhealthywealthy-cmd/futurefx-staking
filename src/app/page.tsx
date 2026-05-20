@@ -1,5 +1,10 @@
 "use client";
 
+import { vestingAbi } from "../contracts/vestingAbi";
+
+import { VESTING_CONTRACT }
+from "../contracts/constants";
+
 import { useState, useEffect } from "react";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -41,6 +46,8 @@ export default function Home() {
   const [totalStakedAmount, setTotalStakedAmount] = useState(0);
   const [totalPendingRewards, setTotalPendingRewards] = useState(0);
   const [globalTotalStaked, setGlobalTotalStaked] = useState(0);
+  const [allVestings, setAllVestings] = useState<any[]>([]);
+  const [totalClaimableVesting, setTotalClaimableVesting] = useState(0);
 
   const { writeContract } = useWriteContract();
   const { data: futfxBalance } = useReadContract({
@@ -142,7 +149,82 @@ export default function Home() {
 
     };
 
+    const loadVestings = async () => {
+
+      if (!address) return;
+
+      try {
+
+        const vestingIds = await publicClient.readContract({
+          address: VESTING_CONTRACT,
+          abi: vestingAbi,
+          functionName: "getMemberVestings",
+          args: [address],
+        });
+
+        const vestingsArray = [];
+
+        let totalClaimable = 0;
+
+        for (const vestingId of vestingIds as bigint[]) {
+
+          const vesting = await publicClient.readContract({
+            address: VESTING_CONTRACT,
+            abi: vestingAbi,
+            functionName: "getVesting",
+            args: [vestingId],
+          });
+
+          const claimableAmount = await publicClient.readContract({
+            address: VESTING_CONTRACT,
+            abi: vestingAbi,
+            functionName: "claimable",
+            args: [vestingId],
+          });
+
+          vestingsArray.push({
+            vestingId: Number(vestingId),
+            beneficiary: (vesting as any).beneficiary,
+            totalAmount:
+              Number((vesting as any).totalAmount) / 1e18,
+            claimedAmount:
+              Number((vesting as any).claimedAmount) / 1e18,
+            claimableAmount:
+              Number(claimableAmount) / 1e18,
+            startTime:
+              Number((vesting as any).startTime),
+            paused:
+              (vesting as any).paused,
+            forfeited:
+              (vesting as any).forfeited,
+            sourceId:
+              (vesting as any).sourceId,
+          });
+
+          totalClaimable += Number(claimableAmount);
+
+        }
+
+        setAllVestings(vestingsArray);
+
+        setTotalClaimableVesting(
+          totalClaimable / 1e18
+        );
+
+      } catch (err) {
+
+        console.error(
+          "LOAD VESTINGS ERROR:",
+          err
+        );
+
+      }
+
+    };
+
     loadStakes();
+
+    loadVestings();
 
   }, [address, stakeCount]);
   
@@ -197,7 +279,22 @@ export default function Home() {
 
   };
 
-  const handleUnstake = async (stakeId: number) => {
+  const handleVestingClaim = async (
+    vestingId: number
+  ) => {
+
+    writeContract({
+      address: VESTING_CONTRACT,
+      abi: vestingAbi,
+      functionName: "claim",
+      args: [BigInt(vestingId)],
+    });
+
+  };
+
+  const handleUnstake = async (
+    stakeId: number
+  ) => {
 
     writeContract({
       address: STAKING_CONTRACT,
@@ -640,7 +737,153 @@ export default function Home() {
         </div>
 
       </div>
+      {/* VESTING POSITIONS */}
 
+      <div className="max-w-7xl mx-auto mt-12 bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
+
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+
+          <div>
+
+            <h2 className="text-3xl font-bold">
+              Vesting Positions
+            </h2>
+
+            <p className="text-gray-500 mt-2">
+              FutureFX commission vesting dashboard
+            </p>
+
+          </div>
+
+          <div className="bg-blue-500/20 text-blue-400 px-4 py-2 rounded-xl text-sm">
+
+            Claimable:
+            {" "}
+            {totalClaimableVesting.toFixed(6)}
+            {" "}
+            FUTFX
+
+          </div>
+
+        </div>
+
+        <div className="overflow-x-auto">
+
+          <table className="w-full">
+
+            <thead>
+
+              <tr className="border-b border-zinc-800 text-left text-gray-400 text-sm">
+
+                <th className="pb-4">Source</th>
+                <th className="pb-4">Total</th>
+                <th className="pb-4">Claimed</th>
+                <th className="pb-4">Claimable</th>
+                <th className="pb-4">Status</th>
+                <th className="pb-4">Start Date</th>
+                <th className="pb-4">Action</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {allVestings.map((vesting, index) => (
+
+                <tr
+                  key={index}
+                  className="border-b border-zinc-800"
+                >
+
+                  <td className="py-6 text-blue-400 font-bold">
+                    {vesting.sourceId}
+                  </td>
+
+                  <td className="py-6 text-white">
+                    {vesting.totalAmount.toLocaleString()}
+                    {" "}
+                    FUTFX
+                  </td>
+
+                  <td className="py-6 text-gray-300">
+                    {vesting.claimedAmount.toFixed(6)}
+                  </td>
+
+                  <td className="py-6 text-yellow-400 font-bold">
+                    {vesting.claimableAmount.toFixed(6)}
+                  </td>
+
+                  <td className="py-6">
+
+                    {vesting.forfeited ? (
+
+                      <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-lg text-sm font-bold">
+                        Forfeited
+                      </span>
+
+                    ) : vesting.paused ? (
+
+                      <span className="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-lg text-sm font-bold">
+                        Paused
+                      </span>
+
+                    ) : (
+
+                      <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-lg text-sm font-bold">
+                        Active
+                      </span>
+
+                    )}
+
+                  </td>
+
+                  <td className="py-6 text-gray-300">
+
+                    {new Date(
+                      vesting.startTime * 1000
+                    ).toLocaleDateString()}
+
+                  </td>
+                  <td className="py-6">
+
+                    <button
+                      disabled={
+                        vesting.claimableAmount <= 0
+                        || vesting.paused
+                        || vesting.forfeited
+                      }
+                      onClick={() =>
+                        handleVestingClaim(
+                          vesting.vestingId
+                        )
+                      }
+                      className={`px-4 py-2 rounded-lg font-bold transition ${
+                        vesting.claimableAmount > 0
+                        && !vesting.paused
+                        && !vesting.forfeited
+                          ? "bg-green-500 hover:bg-green-600 text-white"
+                          : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                      }`}
+                    >
+
+                      Claim
+
+                    </button>
+
+                  </td>
+
+                </tr>
+
+              ))}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>          
     </main>
   );
 }
