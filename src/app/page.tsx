@@ -737,6 +737,7 @@ export default function Home() {
         </div>
 
       </div>
+
       {/* VESTING POSITIONS */}
 
       <div className="max-w-7xl mx-auto mt-12 bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
@@ -885,7 +886,8 @@ export default function Home() {
 
         </div>
 
-      </div>          
+      </div> 
+               
     </main>
   );
 }
