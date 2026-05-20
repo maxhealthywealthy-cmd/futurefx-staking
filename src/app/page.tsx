@@ -789,7 +789,8 @@ export default function Home() {
 
             <tbody>
 
-              {allVestings.map((vesting, index) => (
+              {Array.isArray(allVestings) &&
+                allVestings.map((vesting, index) => (
 
                 <tr
                   key={index}
@@ -875,7 +876,8 @@ export default function Home() {
 
                 </tr>
 
-              ))}
+              ))
+              }
 
             </tbody>
 
